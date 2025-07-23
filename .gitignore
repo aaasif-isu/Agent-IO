@@ -8,6 +8,6 @@ __pycache__/
 
 
 code/*
-code_v2/output/*
+# code_v2/output/*
 data/*
 
