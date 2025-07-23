@@ -1,0 +1,6 @@
+# requirements.txt
+pandas
+PyYAML
+requests
+python-dotenv
+numpy
