@@ -1,0 +1,10 @@
+# Defines the different analysis pipelines you can run.
+pipelines:
+  - name: "Raw Darshan + Config"
+    type: "raw_darshan"
+
+  - name: "Raw Darshan + SHAP values + Config"
+    type: "darshan_shap"
+
+  - name: "SHAP values + Config"
+    type: "shap_only"
