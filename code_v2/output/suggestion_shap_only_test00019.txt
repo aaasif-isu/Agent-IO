@@ -106,103 +106,110 @@ parameter2 = new_value  (Impact: A, Risk: B - A complementary change to improve 
    - **Relevance and Justification:** Changing the API from POSIX to HDF5 can significantly improve performance for highly parallel jobs, especially given the bottlenecks related to file access. The current POSIX API may not be optimized for the level of parallelism indicated by the bottlenecks.
    - **Impact Score:** 8
    - **Risk Score:** 5
-   - **Justification:** The impact is high due to potential improvements in parallel I/O performance, but there is moderate risk as it may introduce compatibility issues with existing code.
+   - **Justification:** The impact is high due to potential improvements in parallel I/O performance, but there is a moderate risk of compatibility issues or overhead in transitioning to HDF5.
 
 2. **transferSize**
    - **Relevance and Justification:** The current transfer size of 4K is quite small compared to the block size and stripe size. Increasing this could reduce the number of I/O operations, addressing the bottlenecks related to access times.
    - **Impact Score:** 9
    - **Risk Score:** 4
-   - **Justification:** A larger transfer size can significantly improve throughput, but there is a risk of increased memory usage.
+   - **Justification:** A larger transfer size can significantly improve throughput, but there is a lower risk since it generally aligns with the block size.
 
 3. **blockSize**
    - **Relevance and Justification:** The current block size of 1M is reasonable, but increasing it to 4M could better match the Lustre stripe size and improve sequential access performance.
    - **Impact Score:** 7
    - **Risk Score:** 3
-   - **Justification:** This change is likely to improve performance without significant risk, as it aligns better with the Lustre configuration.
+   - **Justification:** This change can enhance performance for large files, with minimal risk of introducing new bottlenecks.
 
 4. **segmentCount**
-   - **Relevance and Justification:** Increasing the segment count can enhance parallelism, which may help with the bottlenecks related to file access. However, it could also increase metadata overhead.
+   - **Relevance and Justification:** Increasing the segment count can improve parallelism, which may help with the bottlenecks observed. However, it can also increase metadata overhead.
    - **Impact Score:** 6
    - **Risk Score:** 6
-   - **Justification:** While it can improve performance, the risk is moderate due to potential overhead.
+   - **Justification:** While it can improve performance, the risk is moderate due to potential overhead and contention.
 
 5. **numTasks**
-   - **Relevance and Justification:** Increasing the number of tasks can improve parallelism, but it may lead to contention, especially with the current configuration.
+   - **Relevance and Justification:** Increasing the number of tasks can enhance parallelism, but it may lead to contention, especially if the I/O subsystem is already a bottleneck.
    - **Impact Score:** 5
    - **Risk Score:** 7
-   - **Justification:** The impact is moderate, but the risk of contention is high, making this a less favorable option.
+   - **Justification:** The impact is moderate, but the risk is high due to potential contention issues.
 
 6. **filePerProc**
-   - **Relevance and Justification:** Changing to one file per process could reduce contention but may lead to many small files, which can be problematic in terms of metadata overhead.
-   - **Impact Score:** 5
+   - **Relevance and Justification:** Changing to one file per process could reduce contention but may lead to many small files, which can be problematic for performance.
+   - **Impact Score:** 4
    - **Risk Score:** 6
-   - **Justification:** The impact is moderate, but the risk of increased metadata overhead is significant.
+   - **Justification:** The impact is low, and the risk is moderate due to the potential for increased file system overhead.
 
 7. **setAlignment**
-   - **Relevance and Justification:** Aligning data in memory can improve performance, especially if it matches the Lustre block size. This is relevant given the current configuration.
-   - **Impact Score:** 6
+   - **Relevance and Justification:** Aligning data in memory can improve performance, especially if it matches the Lustre block size. However, the current setting of 1M is already reasonable.
+   - **Impact Score:** 5
    - **Risk Score:** 2
-   - **Justification:** This change is likely to improve performance with minimal risk.
+   - **Justification:** The impact is moderate, but the risk is low since it is a straightforward adjustment.
 
 8. **LUSTRE_STRIPE_SIZE**
-   - **Relevance and Justification:** The current stripe size of 4M matches the Lustre configuration, but increasing it to 1M could better align with the block size and improve performance.
-   - **Impact Score:** 6
+   - **Relevance and Justification:** The current stripe size of 4M matches the Lustre configuration, but increasing it to 1M could be beneficial if the application accesses smaller chunks of data.
+   - **Impact Score:** 5
    - **Risk Score:** 3
-   - **Justification:** This change could improve performance without significant risk.
+   - **Justification:** The impact is moderate, and the risk is low since it aligns with the application’s I/O patterns.
 
 9. **LUSTRE_STRIPE_WIDTH**
-   - **Relevance and Justification:** Increasing the stripe width can enhance parallelism, which may help with the bottlenecks related to file access.
-   - **Impact Score:** 7
+   - **Relevance and Justification:** Increasing the stripe width can improve parallelism, which may help with the bottlenecks observed. However, it can also increase network overhead.
+   - **Impact Score:** 6
    - **Risk Score:** 5
-   - **Justification:** The impact is high, but there is a moderate risk of increased network overhead.
+   - **Justification:** The impact is moderate, but the risk is also moderate due to potential network contention.
 
 ### **STAGE 2: Ranked Recommendations**
 
-1. **transferSize = 1M**
-   - **Impact Score:** 9
-   - **Risk Score:** 4
-   - **Justification:** This change is expected to significantly improve throughput by reducing the number of I/O operations while maintaining manageable memory usage.
+1. **transferSize = 1M**  
+   - **Impact Score:** 9  
+   - **Risk Score:** 4  
+   - **Justification:** This change is expected to significantly improve throughput by reducing the number of I/O operations.
 
-2. **api = HDF5**
-   - **Impact Score:** 8
-   - **Risk Score:** 5
-   - **Justification:** Switching to HDF5 can enhance performance for parallel I/O, though it carries some risk of compatibility issues.
+2. **api = HDF5**  
+   - **Impact Score:** 8  
+   - **Risk Score:** 5  
+   - **Justification:** Switching to HDF5 can enhance performance for parallel I/O, addressing the bottlenecks effectively.
 
-3. **blockSize = 4M**
-   - **Impact Score:** 7
-   - **Risk Score:** 3
-   - **Justification:** Increasing the block size aligns better with Lustre's configuration, likely improving sequential access performance with minimal risk.
+3. **blockSize = 4M**  
+   - **Impact Score:** 7  
+   - **Risk Score:** 3  
+   - **Justification:** Increasing the block size can improve performance for large files and sequential access.
 
-4. **LUSTRE_STRIPE_WIDTH = 4**
-   - **Impact Score:** 7
-   - **Risk Score:** 5
-   - **Justification:** This change can enhance parallelism, addressing file access bottlenecks, but it carries some risk of increased network overhead.
+4. **segmentCount = 16**  
+   - **Impact Score:** 6  
+   - **Risk Score:** 6  
+   - **Justification:** This change can improve parallelism, although it carries a moderate risk of overhead.
 
-5. **setAlignment = 4K**
-   - **Impact Score:** 6
-   - **Risk Score:** 2
-   - **Justification:** Aligning data in memory can improve performance with minimal risk, making it a safe and beneficial change.
+5. **LUSTRE_STRIPE_WIDTH = 4**  
+   - **Impact Score:** 6  
+   - **Risk Score:** 5  
+   - **Justification:** Increasing the stripe width can enhance parallelism, which may help with the observed bottlenecks.
 
 ### **STAGE 3: Final Consolidated Configuration**
 
 **Final Recommendation:**
 **Before:**
-LUSTRE_STRIPE_SIZE = 4M  
-LUSTRE_STRIPE_WIDTH = 1  
-api = POSIX  
-blockSize = 1M  
-filePerProc = 0  
-fsync = 0  
-numTasks = 4  
-segmentCount = 1  
-setAlignment = 1M  
-transferSize = 4K  
-useO_DIRECT = 0  
-useStridedDatatype = 0  
+```
+LUSTRE_STRIPE_SIZE = 4M
+LUSTRE_STRIPE_WIDTH = 1
+api = POSIX
+blockSize = 1M
+filePerProc = 0
+fsync = 0
+numTasks = 4
+segmentCount = 1
+setAlignment = 1M
+transferSize = 4K
+useO_DIRECT = 0
+useStridedDatatype = 0
+```
 
 **After:**
-LUSTRE_STRIPE_WIDTH = 4  (Impact: 7, Risk: 5 - Expected to enhance parallelism and reduce file access bottlenecks)  
-api = HDF5  (Impact: 8, Risk: 5 - Expected to improve performance for parallel I/O)  
-blockSize = 4M  (Impact: 7, Risk: 3 - A complementary change to improve sequential access)  
-transferSize = 1M  (Impact: 9, Risk: 4 - Expected to significantly improve throughput by reducing I/O operations)  
-setAlignment = 4K  (Impact: 6, Risk: 2 - A safe change to improve data alignment and performance)
+```
+LUSTRE_STRIPE_SIZE = 4M  (Impact: 5, Risk: 3 - Maintains current configuration)
+LUSTRE_STRIPE_WIDTH = 4  (Impact: 6, Risk: 5 - Expected to improve parallelism)
+api = HDF5              (Impact: 8, Risk: 5 - Expected to enhance parallel I/O performance)
+blockSize = 4M          (Impact: 7, Risk: 3 - Aids in sequential access performance)
+segmentCount = 16       (Impact: 6, Risk: 6 - Increases parallelism with moderate risk)
+transferSize = 1M       (Impact: 9, Risk: 4 - Expected to significantly improve throughput)
+``` 
+
+This configuration is expected to address the primary bottlenecks effectively while balancing the associated risks.

@@ -1,0 +1,2 @@
+config_id,testFile,api,transferSize,blockSize,segmentCount,numTasks,filePerProc,useStridedDatatype,setAlignment,useO_DIRECT,fsync,LUSTRE_STRIPE_SIZE,LUSTRE_STRIPE_WIDTH
+19,test00019,MPIIO,1M,4M,16,4,1,0,1M,0,0,4M,1

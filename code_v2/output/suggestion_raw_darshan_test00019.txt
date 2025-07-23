@@ -103,103 +103,107 @@ parameter2 = new_value  (Impact: A, Risk: B - A complementary change to improve 
 ### **STAGE 1: Systematic Evaluation and Scoring**
 
 1. **api**
-   - **Relevance and Justification:** Changing from POSIX to HDF5 or MPIIO can significantly improve performance for highly parallel jobs, especially given the high number of I/O operations (POSIX_ACCESS1_ACCESS and POSIX_ACCESS4_ACCESS). 
+   - **Relevance and Justification:** Changing the API from POSIX to HDF5 or MPIIO can significantly improve performance for highly parallel jobs, especially given the high number of I/O operations (POSIX_ACCESS1_ACCESS and POSIX_ACCESS4_ACCESS). The current configuration is using POSIX, which may not be optimal for the workload.
    - **Impact Score:** 8
-   - **Risk Score:** 5
-   - **Justification:** The impact is high due to the potential for better handling of parallel I/O, but there is a moderate risk of compatibility issues or overhead with the new API.
+   - **Risk Score:** 6
+   - **Justification:** The impact is high because switching to a more efficient API can reduce overhead and improve throughput. However, there is a moderate risk of compatibility issues or increased complexity in the code.
 
 2. **transferSize**
-   - **Relevance and Justification:** The current transfer size of 4K is quite small compared to the block size and Lustre stripe size. Increasing this could reduce the number of I/O operations and improve throughput.
+   - **Relevance and Justification:** The current transfer size is set to 4K, which is quite small compared to the block size and stripe size. Increasing this could help reduce the number of I/O operations and improve throughput.
    - **Impact Score:** 9
    - **Risk Score:** 4
-   - **Justification:** A larger transfer size can significantly reduce the number of I/O calls, thus improving performance. The risk is low as it generally leads to better performance for sequential access.
+   - **Justification:** A larger transfer size can significantly enhance performance by reducing the number of I/O calls. The risk is low as it generally leads to better performance without major downsides.
 
 3. **blockSize**
-   - **Relevance and Justification:** The current block size of 1M is reasonable, but increasing it to 4M could align better with the Lustre stripe size and improve performance for large files.
+   - **Relevance and Justification:** The current block size is 1M, which is reasonable, but increasing it to 4M could align better with the Lustre stripe size and improve sequential access performance.
    - **Impact Score:** 7
    - **Risk Score:** 3
-   - **Justification:** A larger block size can enhance performance for large sequential writes, with minimal risk of introducing new bottlenecks.
+   - **Justification:** Increasing the block size can improve performance for large files, but the risk is low since it typically leads to better I/O efficiency.
 
 4. **segmentCount**
-   - **Relevance and Justification:** Increasing the segment count can improve parallelism, which is relevant given the high number of I/O operations. However, it may introduce metadata overhead.
-   - **Impact Score:** 6
-   - **Risk Score:** 6
-   - **Justification:** While it can improve performance, the risk is moderate due to potential overhead and contention issues.
-
-5. **numTasks**
-   - **Relevance and Justification:** Increasing the number of tasks can improve parallelism, but it may lead to contention, especially with the current configuration.
-   - **Impact Score:** 5
-   - **Risk Score:** 7
-   - **Justification:** While there is potential for improvement, the risk of contention and overhead is significant, making this a less favorable option.
-
-6. **filePerProc**
-   - **Relevance and Justification:** Changing to one file per process could reduce contention but may lead to many small files, which can be problematic.
-   - **Impact Score:** 5
-   - **Risk Score:** 6
-   - **Justification:** The impact is moderate, but the risk of creating many small files could lead to performance degradation.
-
-7. **setAlignment**
-   - **Relevance and Justification:** Aligning data in memory can improve performance, especially if it matches the filesystem block size.
-   - **Impact Score:** 6
-   - **Risk Score:** 3
-   - **Justification:** This change can enhance performance with minimal risk, as it aligns with best practices.
-
-8. **LUSTRE_STRIPE_SIZE**
-   - **Relevance and Justification:** The current stripe size of 4M is reasonable, but adjusting it to match the block size could improve performance.
-   - **Impact Score:** 7
-   - **Risk Score:** 4
-   - **Justification:** Aligning stripe size with block size can enhance throughput, with a moderate risk of network overhead.
-
-9. **LUSTRE_STRIPE_WIDTH**
-   - **Relevance and Justification:** Increasing the stripe width can improve parallelism, which is relevant given the high number of I/O operations.
+   - **Relevance and Justification:** Increasing the segment count can enhance parallelism, which is beneficial given the high number of I/O operations. However, it may introduce metadata overhead.
    - **Impact Score:** 6
    - **Risk Score:** 5
-   - **Justification:** While it can enhance performance, the risk of increased network overhead is a concern.
+   - **Justification:** While it can improve performance, the risk of increased overhead makes this a moderate option.
+
+5. **numTasks**
+   - **Relevance and Justification:** Increasing the number of tasks can improve parallelism, but it may lead to contention, especially with the current configuration of file sharing.
+   - **Impact Score:** 5
+   - **Risk Score:** 7
+   - **Justification:** While there is potential for improvement, the risk of contention and diminishing returns makes this a less favorable option.
+
+6. **filePerProc**
+   - **Relevance and Justification:** Changing to one file per process could reduce contention but may lead to many small files, which can be problematic for I/O performance.
+   - **Impact Score:** 5
+   - **Risk Score:** 6
+   - **Justification:** This could help with contention but introduces the risk of managing many small files, which can be inefficient.
+
+7. **setAlignment**
+   - **Relevance and Justification:** Aligning data in memory can improve performance, especially if it matches the filesystem block size. The current alignment is set to 1M, which may not be optimal.
+   - **Impact Score:** 6
+   - **Risk Score:** 3
+   - **Justification:** This change can improve performance with low risk, as it aligns with best practices for I/O.
+
+8. **LUSTRE_STRIPE_SIZE**
+   - **Relevance and Justification:** The current stripe size is 4M, which matches the Lustre configuration. However, adjusting it to 1M could be beneficial if the transfer size is reduced.
+   - **Impact Score:** 4
+   - **Risk Score:** 5
+   - **Justification:** While it could help with smaller I/O operations, the risk of misalignment with larger operations makes this a lower priority.
+
+9. **LUSTRE_STRIPE_WIDTH**
+   - **Relevance and Justification:** Increasing the stripe width can improve parallelism, but it may also increase network overhead. Given the current configuration, this may not be the best option.
+   - **Impact Score:** 4
+   - **Risk Score:** 6
+   - **Justification:** While it can help with performance, the risk of increased overhead makes this a less favorable option.
 
 ### **STAGE 2: Ranked Recommendations**
 
-1. **transferSize = 1M**
+1. **transferSize = 64K**
    - **Impact Score:** 9
    - **Risk Score:** 4
-   - **Justification:** This change is expected to significantly reduce the number of I/O operations, improving throughput with low risk.
+   - **Justification:** Increasing the transfer size will significantly reduce the number of I/O operations, improving throughput with low risk.
 
 2. **api = MPIIO**
    - **Impact Score:** 8
-   - **Risk Score:** 5
-   - **Justification:** Switching to MPIIO can enhance performance for parallel jobs, with moderate risk of compatibility issues.
+   - **Risk Score:** 6
+   - **Justification:** Switching to MPIIO can enhance performance for parallel jobs, though it carries some risk of compatibility issues.
 
 3. **blockSize = 4M**
    - **Impact Score:** 7
    - **Risk Score:** 3
-   - **Justification:** Increasing the block size can improve performance for large files, with minimal risk of introducing new bottlenecks.
+   - **Justification:** Increasing the block size can improve performance for large files, with minimal risk.
 
-4. **LUSTRE_STRIPE_SIZE = 1M**
-   - **Impact Score:** 7
-   - **Risk Score:** 4
-   - **Justification:** Aligning the stripe size with the block size can enhance throughput, with moderate risk of network overhead.
-
-5. **setAlignment = 4K**
+4. **setAlignment = 4K**
    - **Impact Score:** 6
    - **Risk Score:** 3
-   - **Justification:** This change can improve performance by aligning data in memory, with minimal risk.
+   - **Justification:** Aligning data to the filesystem block size can enhance performance with low risk.
+
+5. **segmentCount = 16**
+   - **Impact Score:** 6
+   - **Risk Score:** 5
+   - **Justification:** Increasing the segment count can improve parallelism, but it may introduce some overhead.
 
 ### **STAGE 3: Final Consolidated Configuration**
 
 **Final Recommendation:**
 **Before:**
-```
-api = POSIX
-transferSize = 4K
-blockSize = 1M
-LUSTRE_STRIPE_SIZE = 4M
-setAlignment = 1M
-```
+LUSTRE_STRIPE_SIZE = 4M  
+LUSTRE_STRIPE_WIDTH = 1  
+api = POSIX  
+blockSize = 1M  
+filePerProc = 0  
+fsync = 0  
+numTasks = 4  
+segmentCount = 1  
+setAlignment = 1M  
+transferSize = 4K  
+useO_DIRECT = 0  
+useStridedDatatype = 0  
 
 **After:**
-```
-api = MPIIO  (Impact: 8, Risk: 5 - Expected to improve performance for parallel I/O)
-transferSize = 1M  (Impact: 9, Risk: 4 - Expected to reduce I/O operations and improve throughput)
-blockSize = 4M  (Impact: 7, Risk: 3 - A complementary change to enhance performance for large files)
-LUSTRE_STRIPE_SIZE = 1M  (Impact: 7, Risk: 4 - Aligning stripe size with block size to improve throughput)
-setAlignment = 4K  (Impact: 6, Risk: 3 - Aligning data in memory for better performance)
-```
+LUSTRE_STRIPE_SIZE = 4M  (Impact: 4, Risk: 5 - Maintains current configuration)  
+api = MPIIO  (Impact: 8, Risk: 6 - Expected to improve performance for parallel jobs)  
+blockSize = 4M  (Impact: 7, Risk: 3 - Better alignment with Lustre and improved throughput)  
+setAlignment = 4K  (Impact: 6, Risk: 3 - Aligns data for better performance)  
+transferSize = 64K  (Impact: 9, Risk: 4 - Significantly reduces I/O operations and improves throughput)  
+segmentCount = 16  (Impact: 6, Risk: 5 - Increases parallelism with manageable overhead)  

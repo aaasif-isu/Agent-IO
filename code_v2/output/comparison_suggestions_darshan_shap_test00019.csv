@@ -1,0 +1,13 @@
+Parameter,Original Value,darshan_shap Suggested Value,darshan_shap Impact,darshan_shap Risk
+api,POSIX,MPIIO,8,6
+transferSize,4K,1M,9,5
+blockSize,1M,4M,7,4
+segmentCount,1,16,6,5
+numTasks,4,4,N/A,N/A
+filePerProc,0,1,7,4
+useStridedDatatype,0,0,N/A,N/A
+setAlignment,1M,1M,N/A,N/A
+useO_DIRECT,0,0,N/A,N/A
+fsync,0,0,N/A,N/A
+LUSTRE_STRIPE_SIZE,4M,4M,N/A,N/A
+LUSTRE_STRIPE_WIDTH,1,1,N/A,N/A
